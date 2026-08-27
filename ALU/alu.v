@@ -16,7 +16,7 @@
 ----------------------------------------------------------------------
 |  SRL       |   000010      |   o_alu_result = i_data_a << 1;
 ----------------------------------------------------------------------
-|  NOR       |   000011      |   o_alu_result = ~(i_data_a | i_data_b);
+|  NOR       |   100111      |   o_alu_result = ~(i_data_a | i_data_b);
 ----------------------------------------------------------------------*/
 
 module alu
@@ -43,7 +43,7 @@ localparam OR  = 6'b100101;
 localparam XOR = 6'b100110;
 localparam SRA = 6'b000011;
 localparam SRL = 6'b000010;
-localparam NOR = 6'b000011;
+localparam NOR = 6'b100111;
 
 always @(*) begin
     case (i_op_code)
