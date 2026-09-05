@@ -12,9 +12,9 @@
 ----------------------------------------------------------------------
 |  XOR      |   100110       |   o_alu_result = i_data_a ^ i_data_b;
 ----------------------------------------------------------------------
-|  SRA       |   000011      |   o_alu_result = i_data_a >> 1;
+|  SRA       |   000011      |   o_alu_result = $signed(i_data_a) >> i_data_b;
 ----------------------------------------------------------------------
-|  SRL       |   000010      |   o_alu_result = i_data_a << 1;
+|  SRL       |   000010      |   o_alu_result = i_data_a >> i_data_b;
 ----------------------------------------------------------------------
 |  NOR       |   100111      |   o_alu_result = ~(i_data_a | i_data_b);
 ----------------------------------------------------------------------*/
@@ -35,6 +35,8 @@ module alu
 reg [NB_DATA : 0]       result;
 reg [NB_DATA - 1 : 0]   alu_result  ;
 reg                     carry       ;
+
+localparam SHIFT_WIDTH = $clog2(NB_DATA);
 
 localparam ADD = 6'b100000;
 localparam SUB = 6'b100010;
@@ -71,10 +73,10 @@ always @(*) begin
             alu_result = i_data_a ^ i_data_b;
         end
         SRA: begin
-            alu_result = $signed(i_data_a) >>> 1;
+            alu_result = $signed(i_data_a) >>> i_data_b[SHIFT_WIDTH - 1 : 0];
         end
         SRL: begin
-            alu_result = i_data_a >> 1;
+            alu_result = i_data_a >> i_data_b[SHIFT_WIDTH - 1 : 0];
         end
         NOR: begin
             alu_result = ~(i_data_a | i_data_b);
