@@ -7,6 +7,7 @@ module tb_top_alu;
     localparam NB_DATA   = 8;
     localparam NB_OPCODE = 6;
     localparam N_BOTONS  = 4;
+    localparam SHIFT_WIDTH = $clog2(NB_DATA);
 
     // Códigos de operación, deben matchear con los de la ALU.
     localparam ADD = 6'b100000;
@@ -81,8 +82,8 @@ module tb_top_alu;
                 AND: expected_result = data_a & data_b;
                 OR : expected_result = data_a | data_b;
                 XOR: expected_result = data_a ^ data_b;
-                SRA: expected_result = $signed(data_a) >>> 1;
-                SRL: expected_result = data_a >> 1;
+                SRA: expected_result = $signed(data_a) >>> data_b[SHIFT_WIDTH - 1 : 0];
+                SRL: expected_result = data_a >> data_b[SHIFT_WIDTH - 1 : 0];
                 NOR: expected_result = ~(data_a | data_b);
                 default: expected_result = {NB_DATA{1'b0}};
             endcase
@@ -226,13 +227,13 @@ module tb_top_alu;
     end
 
     // Selección del test
-    //`include "../tests/test1.sv"
-    //`include "../tests/test2.sv"
-    //`include "../tests/test3.sv"
-    //`include "../tests/test4.sv"
-    //`include "../tests/test5.sv"
-    //`include "../tests/test6.sv"
-    //`include "../tests/test7.sv"
-    `include "../tests/test8.sv"
+    //`include "tests/test1.sv"
+    //`include "tests/test2.sv"
+    //`include "tests/test3.sv"
+    //`include "tests/test4.sv"
+    //`include "tests/test5.sv"
+    //`include "tests/test6.sv"
+    `include "tests/test7.sv"
+    //`include "tests/test8.sv"
 
 endmodule
