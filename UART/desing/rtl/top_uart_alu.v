@@ -1,17 +1,18 @@
-
 module top_uart_alu
 #(
-    parameter CLK_FREQ   = 50_000_000 ,
+    parameter CLK_FREQ   = 100_000_000 ,
     parameter BAUD_RATE  = 9600       ,
     parameter OVERSAMPLE = 16         ,
     parameter NB_DATA    = 8          ,
     parameter NB_OPCODE  = 6
 )
 (
-    input  wire clock    ,
-    input  wire i_rst_n  ,
-    input  wire i_rx     , 
-    output wire o_tx      
+    input  wire                   clock   ,
+    input  wire                   i_rst_n ,
+    input  wire                   i_rx    , 
+    output wire                   o_tx    ,
+    output wire [NB_DATA - 1 : 0] o_leds  ,
+    output wire                   o_carry
 );
 
 wire tick;
@@ -57,8 +58,8 @@ interface_alu #(
     .o_tx_data    (tx_data)  ,
     .o_tx_start   (tx_start) ,
     .i_tx_done    (tx_done)  ,
-    .o_alu_result ()         , 
-    .o_alu_carry  ()
+    .o_alu_result (o_leds)   , 
+    .o_alu_carry  (o_carry)
 );
 
 uart_tx #(

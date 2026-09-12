@@ -1,7 +1,7 @@
 
 module baud_rate_gen
 #(
-    parameter CLK_FREQ  = 50_000_000 ,
+    parameter CLK_FREQ  = 100_000_000 ,
     parameter BAUD_RATE = 9600       ,
     parameter OVERSAMPLE = 16        ,
     parameter COUNT_MAX = CLK_FREQ / (BAUD_RATE * OVERSAMPLE)

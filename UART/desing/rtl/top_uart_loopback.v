@@ -4,7 +4,7 @@
 
 module top_uart_loopback
 #(
-    parameter CLK_FREQ   = 50_000_000,
+    parameter CLK_FREQ   = 100_000_000,
     parameter BAUD_RATE  = 9600,
     parameter OVERSAMPLE = 16,
     parameter NB_DATA    = 8
