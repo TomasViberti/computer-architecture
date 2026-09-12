@@ -94,6 +94,7 @@ always @(*) begin
                     tick_cnt_next = {NB_TICK_CNT{1'b0}};
                     bit_cnt_next  = {NB_BIT_CNT{1'b0}};
                     state_next    = DATA;
+                    tx_next       = data_reg[0];
                 end else begin
                     tick_cnt_next = tick_cnt_reg + 1'b1;
                 end
@@ -109,8 +110,10 @@ always @(*) begin
 
                     if (bit_cnt_reg == NB_DATA - 1) begin
                         state_next = STOP;
+                        tx_next    = 1'b1;
                     end else begin
                         bit_cnt_next = bit_cnt_reg + 1'b1;
+                        tx_next      = data_reg[1];
                     end
                 end else begin
                     tick_cnt_next = tick_cnt_reg + 1'b1;
