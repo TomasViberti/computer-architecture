@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-module tb_top_uart_alu;
+module tb_uart_alu;
 
 localparam CLK_FREQ   = 50_000_000;
 localparam BAUD_RATE  = 625_000;
@@ -223,7 +223,7 @@ end
 // Generates the waveform dump for simulation analysis.
 initial begin
     $dumpfile("tb_uart_alu.vcd");
-    $dumpvars(0, tb_top_uart_alu);
+    $dumpvars(0, tb_uart_alu);
 end
 
 // Select the active test one by one.
@@ -233,7 +233,7 @@ end
 //`include "tests/uart_alu/test4.sv"
 //`include "tests/uart_alu/test5.sv"
 //`include "tests/uart_alu/test6.sv"
-//`include "tests/uart_alu/test7.sv"
+`include "tests/uart_alu/test7.sv"
 //`include "tests/uart_alu/test8.sv"
 
 endmodule
