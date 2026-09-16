@@ -233,7 +233,7 @@ end
 //`include "tests/uart_alu/test4.sv"
 //`include "tests/uart_alu/test5.sv"
 //`include "tests/uart_alu/test6.sv"
-`include "tests/uart_alu/test7.sv"
+//`include "tests/uart_alu/test7.sv"
 //`include "tests/uart_alu/test8.sv"
 
 endmodule
