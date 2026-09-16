@@ -29,6 +29,8 @@ console = Console()
 
 
 class ALUController:
+    # Mapeo de operaciones: opcode (funct field estilo MIPS), descripcion y ejemplo.
+    # Una sola fuente de verdad: de aca salen tanto la validacion como la tabla de ayuda.
     OPERATIONS = {
         'add': (0x20, "Suma", "add 10 20"),
         'sub': (0x22, "Resta", "sub 50 30"),
@@ -42,16 +44,12 @@ class ALUController:
 
     SHIFT_OPS = {'srl', 'sra'}
 
-    # Formateadores de resultado por tipo de operacion
-    _FORMATTERS = {
-        'add': lambda r, a, b: f"{r} (uint8) / {r - 256 if r > 127 else r} (int8) = 0x{r:02X}",
-        'sub': lambda r, a, b: f"{r} (uint8) / {r - 256 if r > 127 else r} (int8) = 0x{r:02X}",
-        'and': lambda r, a, b: f"{r} = 0b{r:08b} = 0x{r:02X}",
-        'or':  lambda r, a, b: f"{r} = 0b{r:08b} = 0x{r:02X}",
-        'xor': lambda r, a, b: f"{r} = 0b{r:08b} = 0x{r:02X}",
-        'nor': lambda r, a, b: f"{r} = 0b{r:08b} = 0x{r:02X}",
-        'srl': lambda r, a, b: f"{r} = 0b{r:08b}  (valor {a} desplazado {b} posiciones a la derecha)",
-        'sra': lambda r, a, b: f"{r} = 0b{r:08b}  (valor {a} desplazado {b} posiciones a la derecha)",
+    # Info extra por tipo de operacion, ademas del decimal/hex/binario que se muestra siempre
+    _EXTRA_INFO = {
+        'add': lambda r, a, b: f"(int8: {r - 256 if r > 127 else r})",
+        'sub': lambda r, a, b: f"(int8: {r - 256 if r > 127 else r})",
+        'srl': lambda r, a, b: f"(valor {a} desplazado {b} posiciones a la derecha)",
+        'sra': lambda r, a, b: f"(valor {a} desplazado {b} posiciones a la derecha)",
     }
 
     def __init__(self, port, baudrate=9600, timeout=2):
@@ -171,8 +169,11 @@ class ALUController:
         if result is None:
             return
 
-        texto = self._FORMATTERS[operation](result, operand_a, operand_b)
-        console.print(f"[bold green]← Resultado:[/bold green] {texto}")
+        base = f"{result} (decimal) = 0x{result:02X} (hex) = 0b{result:08b} (binario)"
+        extra = self._EXTRA_INFO.get(operation)
+        if extra:
+            base += f"  {extra(result, operand_a, operand_b)}"
+        console.print(f"[bold green]← Resultado:[/bold green] {base}")
         console.print("-" * 60, style="dim")
 
     def show_help(self):
@@ -247,10 +248,10 @@ class ALUController:
 
         for op, a, b in track(tests, description="Ejecutando..."):
             result = self.execute_operation(op, a, b)
-            table.add_row(
-                op.upper(), str(a), str(b),
-                str(result) if result is not None else "[red]ERROR[/red]"
-            )
+            if result is None:
+                table.add_row(op.upper(), str(a), str(b), "[red]ERROR[/red]")
+            else:
+                table.add_row(op.upper(), str(a), str(b), self._FORMATTERS[op](result, a, b))
             time.sleep(0.3)
 
         console.print(table)
