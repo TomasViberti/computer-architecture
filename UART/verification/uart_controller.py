@@ -38,8 +38,8 @@ class ALUController:
         'or':  (0x25, "OR logico", "or 128 64"),
         'xor': (0x26, "XOR logico", "xor 170 85"),
         'nor': (0x27, "NOR logico", "nor 15 240"),
-        'srl': (0x02, "Shift Right Logical (0-3 bits)", "srl 128 2"),
-        'sra': (0x03, "Shift Right Arithmetic (0-3 bits)", "sra 128 3"),
+        'srl': (0x02, "Shift Right Logical (0-7 bits)", "srl 128 2"),
+        'sra': (0x03, "Shift Right Arithmetic (0-7 bits)", "sra 128 3"),
     }
 
     SHIFT_OPS = {'srl', 'sra'}
@@ -115,18 +115,19 @@ class ALUController:
 
         opcode = self.OPERATIONS[operation][0]
         is_shift = operation in self.SHIFT_OPS
-        b_max = 3 if is_shift else 255
+        b_max = 7 if is_shift else 255
 
         if not self._in_range(operand_a, 0, 255):
             console.print("[red]✗ Operando A fuera de rango (0-255)[/red]")
             return None
         if not self._in_range(shift_or_b, 0, b_max):
-            label = "Cantidad de desplazamiento debe ser 0-3" if is_shift else "Operando B fuera de rango (0-255)"
+            label = "Cantidad de desplazamiento debe ser 0-7" if is_shift else "Operando B fuera de rango (0-255)"
             console.print(f"[red]✗ {label}[/red]")
             return None
 
-        # Para shifts, la cantidad se codifica en los bits [7:6] del segundo byte
-        operand_b_encoded = (shift_or_b << 6) if is_shift else shift_or_b
+        # B se envia tal cual: para srl/sra es la cantidad de desplazamiento (0-7),
+        # no se codifica en bits altos.
+        operand_b_encoded = shift_or_b
 
         try:
             self.ser.reset_input_buffer()
@@ -237,7 +238,7 @@ class ALUController:
             ("nor", 0, 255),
             ("srl", 128, 1),  # 128 >> 1 = 64
             ("srl", 15, 2),   # 15 >> 2 = 3
-            ("sra", 128, 3),  # shift logico sin signo en 8 bits
+            ("sra", 128, 3),  # arithmetic: mantiene el bit de signo
         ]
 
         table = Table(box=box.SIMPLE_HEAVY)
@@ -251,7 +252,7 @@ class ALUController:
             if result is None:
                 table.add_row(op.upper(), str(a), str(b), "[red]ERROR[/red]")
             else:
-                table.add_row(op.upper(), str(a), str(b), self._FORMATTERS[op](result, a, b))
+                table.add_row(op.upper(), str(a), str(b), f"{result} = 0x{result:02X} = 0b{result:08b}")
             time.sleep(0.3)
 
         console.print(table)
