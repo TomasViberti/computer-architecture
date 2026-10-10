@@ -1,0 +1,122 @@
+# =============================================================================
+# .gitignore - Proyecto RISC-V (Verilog/SV + Vivado + C + Python)
+# =============================================================================
+
+# --- Resultados de nuestros scripts de simulacion ----------------------------
+sim_results/
+scripts/sim_results/
+
+# --- Vivado: carpetas generadas ----------------------------------------------
+*.cache/
+*.runs/
+*.sim/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.srcs/sim_1/new/*.log
+.Xil/
+.xil/
+
+# --- Vivado: logs, journals y temporales -------------------------------------
+vivado*.log
+vivado*.jou
+vivado*.str
+vivado_pid*.str
+vivado_pid*.zip
+webtalk*.log
+webtalk*.jou
+hs_err_pid*.log
+xsim.dir/
+xsim*.log
+xelab*.log
+xvlog*.log
+xvhdl*.log
+*.pb
+*.backup.log
+*.backup.jou
+.jobs/
+
+# --- Vivado: salidas de sintesis / implementacion ----------------------------
+*.dcp
+*.bit
+*.bin.bit
+*.ltx
+*.rpt
+*.rpx
+*.mmi
+*.wdb
+*.xdc.bak
+# Los .wcfg (configuracion de ondas) y los .xdc (constraints) SI se versionan
+
+# --- Waveforms / dumps de simulacion -----------------------------------------
+*.vcd
+*.fst
+*.lxt
+*.lxt2
+*.ghw
+*.fsdb
+*.vpd
+*.shm/
+
+# --- Otros simuladores -------------------------------------------------------
+# Verilator
+obj_dir/
+# Icarus Verilog
+*.vvp
+a.out
+# ModelSim / Questa
+work/
+transcript
+vsim.wlf
+modelsim.ini
+*.mpf
+*.mti
+# GHDL
+*.cf
+
+# --- C / toolchain RISC-V (programas de prueba) ------------------------------
+*.o
+*.obj
+*.a
+*.so
+*.elf
+*.out
+*.exe
+*.map
+*.lst
+*.dump
+*.dis
+build/
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Editores / IDEs ---------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# --- Sistema operativo -------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# --- Misc --------------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+*.orig
