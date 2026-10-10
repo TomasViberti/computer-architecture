@@ -3,6 +3,11 @@
 Circuito combinacional: a partir del opcode de la instruccion genera
 las señales de control del datapath.
 
+HALT: instruccion de parada propia, opcode custom-0 (0001011), palabra
+completa 0x0000000B. Se reconoce solo con el opcode. En esa instruccion
+RegWrite, MemWrite, Branch y Jump valen 0; la logica del PC usa o_halt
+para dejar de actualizarse.
+
 Las señales que "no importan" (X) en una instruccion se fijan en 0.
 Un opcode que no corresponde a ninguna instruccion deja todas las
 señales en 0: la instruccion no escribe registros ni memoria y no salta
@@ -17,6 +22,7 @@ señales en 0: la instruccion no escribe registros ni memoria y no salta
 | lui         |  1   |   1    |  100  |  0   |  0   |   00     |   0    |  00
 | jal         |  1   |   0    |  000  |  0   |  0   |   10     |   0    |  01
 | jalr        |  1   |   1    |  000  |  0   |  0   |   10     |   0    |  10
+| halt        |  0   |   0    |  000  |  0   |  0   |   00     |   0    |  00   (o_halt = 1)
 ----------------------------------------------------------------------*/
 
 module control_unit
@@ -29,7 +35,8 @@ module control_unit
     output wire         o_mem_write     ,
     output wire [1 : 0] o_mem_to_reg    ,
     output wire         o_branch        ,
-    output wire [1 : 0] o_jump
+    output wire [1 : 0] o_jump          ,
+    output wire         o_halt
 );
 
 // Opcodes
@@ -41,6 +48,7 @@ localparam OPCODE_BRANCH = 7'b1100011;
 localparam OPCODE_LUI    = 7'b0110111;
 localparam OPCODE_JAL    = 7'b1101111;
 localparam OPCODE_JALR   = 7'b1100111;
+localparam OPCODE_HALT   = 7'b0001011;  
 
 // ALUop
 localparam ALUOP_ADD    = 3'b000;
@@ -67,6 +75,7 @@ reg         mem_write;
 reg [1 : 0] mem_to_reg;
 reg         branch;
 reg [1 : 0] jump;
+reg         halt;
 
 always @(*) begin
     reg_write  = 1'b0;
@@ -77,6 +86,7 @@ always @(*) begin
     mem_to_reg = MTR_ALU;
     branch     = 1'b0;
     jump       = JUMP_NONE;
+    halt       = 1'b0;
 
     case (i_opcode)
         OPCODE_R: begin
@@ -118,6 +128,9 @@ always @(*) begin
             mem_to_reg = MTR_PC4;
             jump       = JUMP_JALR;
         end
+        OPCODE_HALT: begin
+            halt = 1'b1;
+        end
         default: begin
             // se mantienen los valores por defecto
         end
@@ -132,5 +145,6 @@ assign o_mem_write  = mem_write;
 assign o_mem_to_reg = mem_to_reg;
 assign o_branch     = branch;
 assign o_jump       = jump;
+assign o_halt       = halt;
 
 endmodule
