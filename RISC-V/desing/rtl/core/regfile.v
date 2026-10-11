@@ -15,7 +15,7 @@ module regfile
     parameter NB_ADDR = 5
 )
 (
-    input  wire                     i_clk           ,
+    input  wire                     clock           ,
     input  wire                     i_reg_write     ,
     input  wire [NB_ADDR - 1 : 0]   i_rs1           ,
     input  wire [NB_ADDR - 1 : 0]   i_rs2           ,
@@ -36,7 +36,7 @@ initial begin
 end
 
 // Escritura sincronica. Nunca se escribe x0.
-always @(posedge i_clk) begin
+always @(posedge clock) begin
     if (i_reg_write && (i_rd != {NB_ADDR{1'b0}}))
         regs[i_rd] <= i_write_data;
 end

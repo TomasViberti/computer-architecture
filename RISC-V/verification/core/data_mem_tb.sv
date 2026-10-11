@@ -11,6 +11,7 @@ reg         memread;
 reg         memwrite;
 reg  [2:0]  funct3;
 wire [31:0] rdata;
+wire        addr_error;
 
 integer errors = 0;
 integer tests  = 0;
@@ -21,13 +22,14 @@ reg [15:0] h;
 reg [31:0] exp;
 
 data_mem #(.DEPTH(DEPTH)) dut (
-    .i_clk      (clk),
+    .clock      (clk),
     .i_addr     (addr),
     .i_wdata    (wdata),
     .i_memread  (memread),
     .i_memwrite (memwrite),
     .i_funct3   (funct3),
-    .o_rdata    (rdata)
+    .o_rdata    (rdata),
+    .o_addr_error (addr_error)
 );
 
 initial clk = 1'b0;
@@ -138,8 +140,41 @@ initial begin
     store(32'h10, 32'h12345678, 3'b010, 1'b0);
     load (32'h10, 3'b010, 32'hDEADBEEF, "MemWrite=0: no escribe");
 
-    // 9) Direccion fuera de rango: se ignoran los bits altos (da la vuelta)
-    load(DEPTH * 4 + 32'h10, 3'b010, 32'hDEADBEEF, "fuera de rango: alias de 0x10");
+    // 9) Limites del rango: la memoria cubre DEPTH*4 bytes (0x000 a 0x3FF)
+    load((DEPTH - 1) * 4,     3'b010, 32'h0, "ultima palabra esta en rango");
+    check({31'b0, addr_error}, 32'd0, "ultima palabra: sin error");
+    load(DEPTH * 4 - 1,       3'b100, 32'h0, "ultimo byte esta en rango");
+    check({31'b0, addr_error}, 32'd0, "ultimo byte: sin error");
+
+    // 10) Lectura fuera de rango: devuelve 0 y levanta el error (sin aliasing)
+    load(DEPTH * 4,           3'b010, 32'h0, "lectura justo fuera del rango: 0");
+    check({31'b0, addr_error}, 32'd1, "lectura justo fuera del rango: error");
+    load(DEPTH * 4 + 32'h10,  3'b010, 32'h0, "lectura en alias de 0x10: 0, no DEADBEEF");
+    check({31'b0, addr_error}, 32'd1, "lectura en alias de 0x10: error");
+    load(32'h8000_0000,       3'b010, 32'h0, "lectura en 0x80000000: 0");
+    check({31'b0, addr_error}, 32'd1, "lectura en 0x80000000: error");
+    load(32'hFFFF_FFFC,       3'b000, 32'h0, "lectura en 0xFFFFFFFC: 0");
+    check({31'b0, addr_error}, 32'd1, "lectura en 0xFFFFFFFC: error");
+
+    // 11) Escritura fuera de rango: no se guarda y levanta el error
+    @(negedge clk);
+    addr = DEPTH * 4 + 32'h10; wdata = 32'hDEAD0000; funct3 = 3'b010; memwrite = 1'b1; memread = 1'b0;
+    #1;
+    check({31'b0, addr_error}, 32'd1, "escritura fuera de rango: error");
+    @(posedge clk); #1 memwrite = 1'b0;
+    load(32'h10, 3'b010, 32'hDEADBEEF, "escritura fuera de rango NO pisa 0x10");
+    check({31'b0, addr_error}, 32'd0, "direccion valida: sin error");
+
+    @(negedge clk);
+    addr = DEPTH * 4; wdata = 32'hCAFEBABE; funct3 = 3'b000; memwrite = 1'b1; memread = 1'b0;
+    #1;
+    check({31'b0, addr_error}, 32'd1, "sb fuera de rango: error");
+    @(posedge clk); #1 memwrite = 1'b0;
+    load(32'h0, 3'b010, 32'h0, "sb fuera de rango NO pisa 0x0");
+
+    // 12) Sin lectura ni escritura no hay error, aunque la direccion sea invalida
+    addr = 32'hFFFF_FFFF; memread = 1'b0; memwrite = 1'b0; #1;
+    check({31'b0, addr_error}, 32'd0, "sin acceso: sin error");
 
     $display("----------------------------------------");
     $display("%0d pruebas, %0d errores", tests, errors);
