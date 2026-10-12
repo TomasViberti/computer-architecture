@@ -19,7 +19,7 @@ integer tests  = 0;
 integer k;
 
 regfile #(.NB_DATA(NB_DATA), .NB_ADDR(NB_ADDR)) dut (
-    .i_clk        (clk),
+    .clock        (clk),
     .i_reg_write  (reg_write),
     .i_rs1        (rs1),
     .i_rs2        (rs2),
