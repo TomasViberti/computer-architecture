@@ -9,8 +9,8 @@ module pc_tb;
     wire [31:0] current_pc;
 
     pc dut (
-        .i_clk(clk),
-        .i_reset(reset),
+        .clock(clk),
+        .i_rst_n(reset),
         .i_enable(enable),
         .i_next_pc(next_pc),
         .o_current_pc(current_pc)
