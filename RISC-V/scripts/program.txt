@@ -1,0 +1,40 @@
+addi x1, x0, 5
+addi x2, x0, 7
+add  x3, x1, x2
+sub  x4, x2, x1
+and  x5, x1, x2
+or   x6, x1, x2
+xor  x7, x1, x2
+slli x8, x1, 3
+addi x9, x0, -16
+srai x10, x9, 2
+srli x11, x9, 28
+slt  x12, x9, x1
+sltu x13, x9, x1
+lui  x14, 0x12345
+sw   x3, 0(x0)
+sw   x9, 4(x0)
+sb   x1, 9(x0)
+lw   x15, 0(x0)
+lb   x16, 4(x0)
+lbu  x17, 4(x0)
+lh   x18, 4(x0)
+lw   x19, 8(x0)
+addi x20, x0, 0
+addi x21, x0, 5
+loop: add x20, x20, x21
+addi x21, x21, -1
+bne  x21, x0, loop
+beq  x0, x0, +8
+addi x22, x0, 99
+jal  x23, +12
+addi x24, x0, 99
+addi x24, x0, 98
+addi x25, x0, 0x95
+jalr x26, 0(x25)
+addi x24, x0, 97
+addi x24, x0, 96
+addi x24, x0, 95
+addi x0, x0, 1
+addi x27, x0, 1
+halt

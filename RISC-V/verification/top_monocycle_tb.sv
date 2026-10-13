@@ -1,13 +1,23 @@
 `timescale 1ns / 1ps
 
-// Testbench del top monociclo: carga un programa por el puerto de escritura
-// de la memoria de instrucciones, lo ejecuta hasta el HALT y revisa el estado
-// final de los registros y de la memoria de datos (por referencia jerarquica).
+// Testbench del top monociclo.
+// Carga un programa por el puerto de escritura de la memoria de instrucciones
+// lo ejecuta hasta el HALT y escribe el estado final en un archivo, 
+// para compararlo con el modelo en python.
+//
+// Con un programa nuevo:
+//   1) python ensamblador.py                  -> programa_maquina.txt
+//   2) pegar su contenido entre los marcadores PEGAR AQUI / FIN DEL PROGRAMA
+//   3) poner en RUTA_ESTADO una ruta absoluta con barras normales (/)
+//   4) simular y correr:  python modelo.py --rtl <RUTA_ESTADO>
 
 module top_tb;
 
-localparam PROG_LEN  = 40;
-localparam MAX_CYCLES = 500;
+localparam PROG_LEN   = 256;   // palabras que se cargan; lo que no se pega queda en HALT
+localparam DMEM_DEPTH = 256;   // palabras de la memoria de datos (igual que el top)
+localparam MAX_CYCLES = 500;   // igual que --max-ciclos de modelo.py
+
+localparam RUTA_ESTADO = "F:/FACULTAD/5to/ArqDeComp/computer-architecture/RISC-V/scripts/rtl_state.txt";
 
 reg         clock = 1'b0;
 always #5 clock = ~clock;
@@ -20,14 +30,23 @@ reg  [31:0] wdata = 0;
 wire [31:0] pc, instr;
 wire        halt, imem_err, dmem_err;
 
-integer errors = 0, tests = 0, k, cycles;
+integer k, cycles;
+integer exec_cycles = 0;
+reg imem_err_seen = 1'b0, dmem_err_seen = 1'b0;
 reg [31:0] prog [0:PROG_LEN-1];
 
 top dut (
-    .clock(clock), .i_rst_n(rst_n), .i_enable(enable),
-    .i_imem_write_enable(we), .i_imem_write_addr(waddr), .i_imem_write_data(wdata),
-    .o_pc(pc), .o_instr(instr), .o_halt(halt),
-    .o_imem_addr_error(imem_err), .o_dmem_addr_error(dmem_err)
+    .clock(clock), 
+    .i_rst_n(rst_n), 
+    .i_enable(enable),
+    .i_imem_write_enable(we), 
+    .i_imem_write_addr(waddr), 
+    .i_imem_write_data(wdata),
+    .o_pc(pc), 
+    .o_instr(instr), 
+    .o_halt(halt),
+    .o_imem_addr_error(imem_err), 
+    .o_dmem_addr_error(dmem_err)
 );
 
 // Lectura de registros y memoria de datos desde adentro del top
@@ -42,19 +61,6 @@ function [31:0] mem_word;
                 dut.u_data_mem.mem_b1[idx], dut.u_data_mem.mem_b0[idx]};
 endfunction
 
-task check;
-    input [31:0]  got;
-    input [31:0]  exp;
-    input [511:0] name;
-    begin
-        tests = tests + 1;
-        if (got !== exp) begin
-            errors = errors + 1;
-            $display("FAIL %0s: obtenido %h, esperado %h", name, got, exp);
-        end else $display("ok   %0s", name);
-    end
-endtask
-
 task write_word;
     input [7:0]  a;
     input [31:0] d;
@@ -66,13 +72,49 @@ task write_word;
     end
 endtask
 
+// Escribe el estado final en RUTA_ESTADO (mismo formato que estado_modelo.txt)
+task escribir_estado;
+    integer fd, i;
+    reg [31:0] w;
+    begin
+        fd = $fopen(RUTA_ESTADO, "w");
+        if (fd == 0) $display("ERROR: no se pudo abrir %0s para escribir el estado", RUTA_ESTADO);
+        else begin
+            $fdisplay(fd, "PC=%08h", pc);
+            $fdisplay(fd, "CICLOS=%0d", exec_cycles);
+            $fdisplay(fd, "HALT=%0d", halt);
+            $fdisplay(fd, "ERROR_IMEM=%0d", imem_err_seen);
+            $fdisplay(fd, "ERROR_DMEM=%0d", dmem_err_seen);
+            for (i = 0; i < 32; i = i + 1) $fdisplay(fd, "x%0d=%08h", i, reg_val(i));
+            for (i = 0; i < DMEM_DEPTH; i = i + 1) begin
+                w = mem_word(i);
+                if (w != 32'h0) $fdisplay(fd, "MEM[0x%08h]=%08h", i * 4, w);
+            end
+            $fclose(fd);
+            $display("Estado final escrito en %0s", RUTA_ESTADO);
+        end
+    end
+endtask
+
 // Monitor: una linea por instruccion ejecutada
 always @(posedge clock)
     if (rst_n && enable && !halt)
         $display("  [ciclo] PC = %h  instr = %h", pc, instr);
 
+// Cuenta las instrucciones ejecutadas y recuerda si alguna señal de error se activo
+// (las señales de error son combinacionales)
+always @(posedge clock) begin
+    if (rst_n && enable && !halt) exec_cycles <= exec_cycles + 1;
+    if (imem_err)                 imem_err_seen <= 1'b1;
+    if (enable && dmem_err)       dmem_err_seen <= 1'b1;
+end
+
 initial begin
     // ---------------- PROGRAMA ----------------
+    for (k = 0; k < PROG_LEN; k = k + 1) prog[k] = 32'h0000000B;   // lo no pegado queda en HALT
+
+    // >>>>>>>>>> PEGAR AQUI EL PROGRAMA >>>>>>>>>>
+
     prog[ 0] = 32'h00500093;   // 0x00  addi x1, x0, 5
     prog[ 1] = 32'h00700113;   // 0x04  addi x2, x0, 7
     prog[ 2] = 32'h002081B3;   // 0x08  add  x3, x1, x2
@@ -114,76 +156,28 @@ initial begin
     prog[38] = 32'h00100D93;   // 0x98  addi x27, x0, 1
     prog[39] = 32'h0000000B;   // 0x9C  halt
 
+    // <<<<<<<<<< FIN DEL PROGRAMA <<<<<<<<<<
+
     // ---------------- CARGA (procesador detenido) ----------------
-    #12;
+    #50;
     for (k = 0; k < PROG_LEN; k = k + 1) write_word(k[7:0], prog[k]);
 
-    @(negedge clock); rst_n = 1'b1;
-    #1; check(pc, 32'h0, "despues del reset PC = 0");
-    check(instr, prog[0], "la instruccion 0 quedo cargada");
-
-    // Con enable = 0 el procesador no avanza ni escribe
-    repeat (3) @(posedge clock);
-    #1; check(pc, 32'h0, "enable = 0: el PC no avanza");
-    check(reg_val(1), 32'h0, "enable = 0: no se escribe x1");
-
     // ---------------- EJECUCION ----------------
+    @(negedge clock); rst_n = 1'b1;
     @(negedge clock); enable = 1'b1;
     cycles = 0;
     while (!halt && cycles < MAX_CYCLES) begin
         @(posedge clock); #1;
         cycles = cycles + 1;
     end
-    $display("HALT alcanzado en %0d ciclos (PC = %h)", cycles, pc);
 
-    check({31'b0, halt}, 32'd1, "se llega al HALT");
-    check(pc, 32'h9C, "PC final = 0x9C");
-    // 24 instrucciones hasta el loop + 3*5 del loop + beq, jal, addi, jalr, addi x0, addi x27
-    check(cycles, 32'd45, "cantidad de ciclos hasta el HALT");
-
-    // ---------------- RESULTADOS ----------------
-    check(reg_val(0),  32'h0000_0000, "x0  = 0 (no se escribe)");
-    check(reg_val(1),  32'h0000_0005, "x1  addi");
-    check(reg_val(2),  32'h0000_0007, "x2  addi");
-    check(reg_val(3),  32'h0000_000C, "x3  add");
-    check(reg_val(4),  32'h0000_0002, "x4  sub");
-    check(reg_val(5),  32'h0000_0005, "x5  and");
-    check(reg_val(6),  32'h0000_0007, "x6  or");
-    check(reg_val(7),  32'h0000_0002, "x7  xor");
-    check(reg_val(8),  32'h0000_0028, "x8  slli");
-    check(reg_val(9),  32'hFFFF_FFF0, "x9  addi negativo");
-    check(reg_val(10), 32'hFFFF_FFFC, "x10 srai");
-    check(reg_val(11), 32'h0000_000F, "x11 srli");
-    check(reg_val(12), 32'h0000_0001, "x12 slt");
-    check(reg_val(13), 32'h0000_0000, "x13 sltu");
-    check(reg_val(14), 32'h1234_5000, "x14 lui");
-    check(reg_val(15), 32'h0000_000C, "x15 lw");
-    check(reg_val(16), 32'hFFFF_FFF0, "x16 lb (con signo)");
-    check(reg_val(17), 32'h0000_00F0, "x17 lbu");
-    check(reg_val(18), 32'hFFFF_FFF0, "x18 lh");
-    check(reg_val(19), 32'h0000_0500, "x19 lw despues de sb");
-    check(reg_val(20), 32'h0000_000F, "x20 loop con bne (5+4+3+2+1)");
-    check(reg_val(21), 32'h0000_0000, "x21 contador del loop");
-    check(reg_val(22), 32'h0000_0000, "x22 beq salto la instruccion");
-    check(reg_val(23), 32'h0000_0078, "x23 jal guarda PC + 4");
-    check(reg_val(24), 32'h0000_0000, "x24 jal / jalr saltaron las instrucciones");
-    check(reg_val(25), 32'h0000_0095, "x25 direccion de jalr");
-    check(reg_val(26), 32'h0000_0088, "x26 jalr guarda PC + 4");
-    check(reg_val(27), 32'h0000_0001, "x27 se ejecuta el destino de jalr");
-
-    check(mem_word(0), 32'h0000_000C, "mem[0x0] sw");
-    check(mem_word(1), 32'hFFFF_FFF0, "mem[0x4] sw");
-    check(mem_word(2), 32'h0000_0500, "mem[0x8] sb en el byte 1");
-    check({31'b0, dmem_err}, 32'd0, "sin errores de direccion en datos");
-
-    // ---------------- HALT ----------------
-    repeat (5) @(posedge clock);
-    #1; check(pc, 32'h9C, "en HALT el PC queda quieto");
-    check(reg_val(27), 32'h0000_0001, "en HALT no cambian los registros");
-
-    $display("----------------------------------------");
-    $display("%0d pruebas, %0d errores", tests, errors);
-    if (errors == 0) $display("TODAS LAS PRUEBAS PASARON");
+    // Dos ciclos mas detenido (para que se registren las señales de error) y se escribe el estado
+    @(negedge clock); enable = 1'b0;
+    repeat (2) @(posedge clock);
+    #1;
+    if (halt) $display("HALT alcanzado en %0d ciclos (PC = %h)", exec_cycles, pc);
+    else      $display("ATENCION: no llego al HALT en %0d ciclos", MAX_CYCLES);
+    escribir_estado;
     $finish;
 end
 
