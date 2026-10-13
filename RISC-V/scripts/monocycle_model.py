@@ -2,12 +2,12 @@
 """Modelo del CPU RV32I: ejecuta el programa y escribe el estado final.
 
 Lee el codigo maquina que genero ensamblador.py (lineas prog[n] = 32'h...;), lo ejecuta
-hasta el HALT y escribe estado_modelo.txt. Si encuentra estado_rtl.txt (el que escribe el
+hasta el HALT y escribe estado_modelo.txt. Si encuentra rtl_state.txt (el que escribe el
 testbench) lo compara y dice si el RTL termino en el mismo estado.
 
 Uso:
     python monocycle_model.py
-    python monocycle_model.py -i otro.txt --rtl ruta/estado_rtl.txt
+    python monocycle_model.py -i otro.txt --rtl ruta/rtl_state.txt
 
 El modelo reproduce el comportamiento del diseno:
   - memoria de datos little-endian; acceso desalineado = alineado hacia abajo;
@@ -193,7 +193,7 @@ def main():
     ap = argparse.ArgumentParser(description="Modelo del CPU RV32I")
     ap.add_argument("-i", "--entrada", default="machine_code.txt")
     ap.add_argument("-o", "--salida", default="py_model_state.txt")
-    ap.add_argument("--rtl", default="estado_rtl.txt")
+    ap.add_argument("--rtl", default="rtl_state.txt")
     ap.add_argument("--imem", type=int, default=256, help="palabras de la memoria de programa")
     ap.add_argument("--dmem", type=int, default=256, help="palabras de la memoria de datos")
     ap.add_argument("--max-ciclos", type=int, default=500, help="igual que MAX_CYCLES del testbench")
