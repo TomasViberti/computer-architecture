@@ -17,12 +17,14 @@ module regfile
 (
     input  wire                     clock           ,
     input  wire                     i_reg_write     ,
+    input  wire [NB_ADDR - 1 : 0]   i_debug_addr    ,
     input  wire [NB_ADDR - 1 : 0]   i_rs1           ,
     input  wire [NB_ADDR - 1 : 0]   i_rs2           ,
     input  wire [NB_ADDR - 1 : 0]   i_rd            ,
     input  wire [NB_DATA - 1 : 0]   i_write_data    ,
     output wire [NB_DATA - 1 : 0]   o_read_data1    ,
-    output wire [NB_DATA - 1 : 0]   o_read_data2
+    output wire [NB_DATA - 1 : 0]   o_read_data2    ,
+    output wire [NB_DATA - 1 : 0]   o_debug_data
 );
 
 localparam NB_REGS = 2 ** NB_ADDR;
@@ -44,5 +46,8 @@ end
 // Lecturas combinacionales. x0 siempre devuelve 0.
 assign o_read_data1 = (i_rs1 == {NB_ADDR{1'b0}}) ? {NB_DATA{1'b0}} : regs[i_rs1];
 assign o_read_data2 = (i_rs2 == {NB_ADDR{1'b0}}) ? {NB_DATA{1'b0}} : regs[i_rs2];
+
+// Lectura de debug (Debug Unit). Igual que las otras: x0 siempre devuelve 0.
+assign o_debug_data = (i_debug_addr == {NB_ADDR{1'b0}}) ? {NB_DATA{1'b0}} : regs[i_debug_addr];
 
 endmodule

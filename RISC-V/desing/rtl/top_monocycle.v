@@ -34,7 +34,8 @@ module top
 #(
     parameter IMEM_DEPTH     = 256                  ,   // palabras de programa
     parameter DMEM_DEPTH     = 256                  ,   // palabras de datos
-    parameter IMEM_ADDR_BITS = $clog2(IMEM_DEPTH)
+    parameter DMEM_ADDR_BITS = $clog2(DMEM_DEPTH)   ,   // no modificar
+    parameter IMEM_ADDR_BITS = $clog2(IMEM_DEPTH)       // no modificar
 )
 (
     input  wire                          clock               ,
@@ -51,7 +52,13 @@ module top
     output wire [31 : 0]                 o_instr             ,
     output wire                          o_halt              ,   // la instruccion actual es HALT
     output wire                          o_imem_addr_error   ,
-    output wire                          o_dmem_addr_error
+    output wire                          o_dmem_addr_error   ,
+
+    // Lectura de debug (Debug Unit)
+    input  wire [4 : 0]                  i_debug_reg_addr    ,   // registro a leer (x0 a x31)
+    output wire [31 : 0]                 o_debug_reg_data    ,
+    input  wire [DMEM_ADDR_BITS - 1 : 0] i_debug_mem_addr    ,   // indice de palabra de la memoria de datos
+    output wire [31 : 0]                 o_debug_mem_data
 );
 
 localparam JUMP_JAL  = 2'b01;
@@ -143,12 +150,14 @@ control_unit u_control_unit (
 regfile u_regfile (
     .clock          (clock                 ),
     .i_reg_write    (reg_write & cpu_run   ),
+    .i_debug_addr   (i_debug_reg_addr      ),
     .i_rs1          (rs1                   ),
     .i_rs2          (rs2                   ),
     .i_rd           (rd                    ),
     .i_write_data   (write_back            ),
     .o_read_data1   (read_data1            ),
-    .o_read_data2   (read_data2            )
+    .o_read_data2   (read_data2            ),
+    .o_debug_data   (o_debug_reg_data      )
 );
 
 imm_gen u_imm_gen (
@@ -182,12 +191,14 @@ data_mem #(
 ) u_data_mem (
     .clock          (clock               ),
     .i_addr         (alu_result          ),
+    .i_debug_addr   (i_debug_mem_addr    ),
     .i_wdata        (read_data2          ),
     .i_memread      (mem_read            ),
     .i_memwrite     (mem_write & cpu_run ),
     .i_funct3       (funct3              ),
     .o_rdata        (mem_rdata           ),
-    .o_addr_error   (o_dmem_addr_error   )
+    .o_addr_error   (o_dmem_addr_error   ),
+    .o_debug_data   (o_debug_mem_data    )
 );
 
 // ---------------- WRITE BACK ----------------

@@ -5,10 +5,15 @@ Sin reset, con valor inicial 0 (initial). Pensada para sintetizarse como LUTRAM.
 
 Chequeo de rango: la memoria cubre 4*DEPTH bytes. Un acceso (lectura o escritura) a una
 direccion fuera de ese rango NO se realiza: la escritura se ignora, la lectura devuelve 0,
-y o_addr_error se activa. Asi no se repite la memoria en otras direcciones (aliasing).*/
+y o_addr_error se activa. Asi no se repite la memoria en otras direcciones (aliasing).
+
+Lectura de debug: o_debug_data devuelve la palabra completa de i_debug_addr (indice de palabra),
+sin chequeo de rango, tamano ni signo. Es un segundo puerto de lectura combinacional,
+independiente del que usa el procesador (Debug Unit).*/
 
 module data_mem #(
-    parameter DEPTH = 256                    // cantidad de palabras de 32 bits (256 = 1 KB)
+    parameter DEPTH     = 256              ,   // cantidad de palabras de 32 bits (256 = 1 KB)
+    parameter ADDR_BITS = $clog2(DEPTH)        // no modificar
 )(
     input  wire        clock,
     input  wire [31:0] i_addr,               // direccion en bytes (sale de la ALU)
@@ -17,10 +22,12 @@ module data_mem #(
     input  wire        i_memwrite,
     input  wire [2:0]  i_funct3,             // [1:0] tamano, [2] 1 = sin signo (cargas)
     output reg  [31:0] o_rdata,
-    output wire        o_addr_error             // 1 = acceso fuera de rango (lectura o escritura)
-);
+    output wire        o_addr_error,            // 1 = acceso fuera de rango (lectura o escritura)
 
-    localparam ADDR_BITS = $clog2(DEPTH);
+    // Lectura de debug (Debug Unit)
+    input  wire [ADDR_BITS-1:0] i_debug_addr,   // indice de palabra
+    output wire [31:0]          o_debug_data
+);
 
     // Cuatro memorias de 1 byte: una por cada byte de la palabra (lane 0 = bits [7:0]).
     // Cada una tiene su propio write enable, lo que permite escribir sb/sh sin pisar los demas bytes. 
@@ -91,6 +98,9 @@ module data_mem #(
 
     // Palabra completa de la posicion pedida (lectura asincronica)
     wire [31:0] w_rword = {mem_b3[w_idx], mem_b2[w_idx], mem_b1[w_idx], mem_b0[w_idx]};
+
+    // Lectura de debug: palabra completa del indice pedido (puerto independiente)
+    assign o_debug_data = {mem_b3[i_debug_addr], mem_b2[i_debug_addr], mem_b1[i_debug_addr], mem_b0[i_debug_addr]};
 
     // Byte y halfword que corresponden a la direccion
     reg [7:0]  r_byte;

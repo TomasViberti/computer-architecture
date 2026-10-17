@@ -8,7 +8,7 @@
 ##
 ## ---------------------------------------------------------------------
 
-create_clock -period 10.000 -name clk [get_ports clock]
+create_clock -period 20.000 -name clk [get_ports clock]
 
 set_input_delay  -clock clk 2.000 [get_ports -filter {DIRECTION == IN && NAME != "clock"}]
 set_output_delay -clock clk 0.000 [get_ports -filter {DIRECTION == OUT}]
