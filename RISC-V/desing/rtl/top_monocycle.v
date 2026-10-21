@@ -30,7 +30,7 @@ Ejecucion:
   detenido (i_enable = 0 o en HALT).
 ----------------------------------------------------------------------*/
 
-module top
+module top_monocycle
 #(
     parameter IMEM_DEPTH     = 256                  ,   // palabras de programa
     parameter DMEM_DEPTH     = 256                  ,   // palabras de datos

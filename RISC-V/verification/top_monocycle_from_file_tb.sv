@@ -13,7 +13,7 @@
 // Solo hay que ajustar RUTA_PROGRAMA y RUTA_ESTADO una vez (rutas absolutas con barras normales /).
 // Es la alternativa a top_monocycle_tb.sv, donde el programa se pega dentro del testbench.
 
-module top_tb_file;   // nombre distinto al de top_monocycle_tb.sv para que no choquen en el proyecto
+module top_monocycle_from_file_tb;   // nombre distinto al de top_monocycle_tb.sv para que no choquen en el proyecto
 
 localparam PROG_LEN   = 256;   // palabras que se cargan; lo que no se pega queda en HALT
 localparam DMEM_DEPTH = 256;   // palabras de la memoria de datos (igual que el top)
@@ -38,7 +38,7 @@ integer exec_cycles = 0;
 reg imem_err_seen = 1'b0, dmem_err_seen = 1'b0;
 reg [31:0] prog [0:PROG_LEN-1];
 
-top dut (
+top_monocycle dut (
     .clock(clock), 
     .i_rst_n(rst_n), 
     .i_enable(enable),

@@ -11,7 +11,7 @@
 //   3) poner en RUTA_ESTADO una ruta absoluta con barras normales (/)
 //   4) simular y correr:  python modelo.py --rtl <RUTA_ESTADO>
 
-module top_tb;
+module top_monocycle_tb;
 
 localparam PROG_LEN   = 256;   // palabras que se cargan; lo que no se pega queda en HALT
 localparam DMEM_DEPTH = 256;   // palabras de la memoria de datos (igual que el top)
@@ -35,7 +35,7 @@ integer exec_cycles = 0;
 reg imem_err_seen = 1'b0, dmem_err_seen = 1'b0;
 reg [31:0] prog [0:PROG_LEN-1];
 
-top dut (
+top_monocycle dut (
     .clock(clock), 
     .i_rst_n(rst_n), 
     .i_enable(enable),
