@@ -59,9 +59,9 @@ wire rst_n_raw = locked & i_rst_n;
 (* ASYNC_REG = "TRUE" *) reg [1 : 0] rst_sync;
 
 always @(posedge clock_50mhz or negedge rst_n_raw) begin
-    if (rst_n_raw) rst_sync <= {rst_sync[0], 1'b1};
-    else           rst_sync <= 2'b00;
-end
+    if (!rst_n_raw) rst_sync <= 2'b00;
+    else            rst_sync <= {rst_sync[0], 1'b1};   
+end       
 
 wire rst_n = rst_sync[1];
 
