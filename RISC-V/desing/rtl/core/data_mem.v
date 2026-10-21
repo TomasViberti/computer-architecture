@@ -1,37 +1,48 @@
-/* Memoria de datos (RV32I)
-Memoria de datos RV32I. Lectura combinacional, escritura sincronica.
-Organizada en palabras de 32 bits, con escritura por byte (little-endian).
-Sin reset, con valor inicial 0 (initial). Pensada para sintetizarse como LUTRAM.
-
-Chequeo de rango: la memoria cubre 4*DEPTH bytes. Un acceso (lectura o escritura) a una
-direccion fuera de ese rango NO se realiza: la escritura se ignora, la lectura devuelve 0,
-y o_addr_error se activa. Asi no se repite la memoria en otras direcciones (aliasing).
-
-Lectura de debug: o_debug_data devuelve la palabra completa de i_debug_addr (indice de palabra),
-sin chequeo de rango, tamano ni signo. Es un segundo puerto de lectura combinacional,
-independiente del que usa el procesador (Debug Unit).*/
+/*
+ * Memoria de datos RV32I
+ *
+ * Memoria de datos de 32 bits con lectura combinacional y escritura
+ * sincronica, organizada en palabras y con soporte para escritura por
+ * byte (little-endian).
+ *
+ * Inicializacion:
+ *   - Sin reset.
+ *   - Contenido inicializado en cero mediante initial.
+ *   - Pensada para implementarse como LUTRAM.
+ *
+ * Chequeo de rango:
+ *   La memoria abarca DEPTH palabras (4 * DEPTH bytes). Los accesos
+ *   fuera de este rango se consideran invalidos:
+ *   - Escritura: se ignora.
+ *   - Lectura: devuelve cero.
+ *   - o_addr_error: se activa.
+ *
+ *   De esta manera, se evita el aliasing de direcciones fuera del
+ *   rango implementado.
+ *
+ * Puerto de debug:
+ *   o_debug_data devuelve la palabra completa correspondiente a
+ *   i_debug_addr, interpretada como indice de palabra. Esta lectura
+ *   es combinacional e independiente del puerto utilizado por el
+ *   procesador (Debug Unit), sin chequeo de rango, tamano ni signo.
+ */
 
 module data_mem #(
-    parameter DEPTH     = 256              ,   // cantidad de palabras de 32 bits (256 = 1 KB)
-    parameter ADDR_BITS = $clog2(DEPTH)        // no modificar
+    parameter DEPTH     = 256              ,    // cantidad de palabras de 32 bits (256 = 1 KB)
+    parameter ADDR_BITS = $clog2(DEPTH)         // no modificar
 )(
-    input  wire        clock,
-    input  wire [31:0] i_addr,               // direccion en bytes (sale de la ALU)
-    input  wire [31:0] i_wdata,              // dato a escribir (rs2)
-    input  wire        i_memread,
-    input  wire        i_memwrite,
-    input  wire [2:0]  i_funct3,             // [1:0] tamano, [2] 1 = sin signo (cargas)
-    output reg  [31:0] o_rdata,
-    output wire        o_addr_error,            // 1 = acceso fuera de rango (lectura o escritura)
-
-    // Lectura de debug (Debug Unit)
-    input  wire [ADDR_BITS-1:0] i_debug_addr,   // indice de palabra
-    output wire [31:0]          o_debug_data
+    input  wire                 clock,
+    input  wire [31:0]          i_addr,         // direccion en bytes (sale de la ALU)
+    input  wire [31:0]          i_wdata,        // dato a escribir (rs2)
+    input  wire                 i_memread,
+    input  wire                 i_memwrite,
+    input  wire [2:0]           i_funct3,  
+    input  wire [ADDR_BITS-1:0] i_debug_addr,           
+    output reg  [31:0]          o_rdata,
+    output wire                 o_addr_error,  
+    output wire [31:0]          o_debug_data         
 );
 
-    // Cuatro memorias de 1 byte: una por cada byte de la palabra (lane 0 = bits [7:0]).
-    // Cada una tiene su propio write enable, lo que permite escribir sb/sh sin pisar los demas bytes. 
-    // Esto permite guardar media palabra o incluso un byte sin arruinar un dato de cuatro bytes completos.
     (* ram_style = "distributed" *) reg [7:0] mem_b0 [0:DEPTH-1];
     (* ram_style = "distributed" *) reg [7:0] mem_b1 [0:DEPTH-1];
     (* ram_style = "distributed" *) reg [7:0] mem_b2 [0:DEPTH-1];
@@ -47,22 +58,19 @@ module data_mem #(
         end
     end
 
-    // La direccion se parte: palabra y byte dentro de la palabra
     wire [ADDR_BITS-1:0] w_idx    = i_addr[ADDR_BITS+1:2];
     wire [1:0]           w_offset = i_addr[1:0];
     wire [1:0]           w_size   = i_funct3[1:0];   // 00 byte, 01 half, 10 word
 
     // ---------------- CHEQUEO DE RANGO ----------------
-    // Los bits altos de la direccion deben ser 0: la memoria cubre 4*DEPTH bytes.
+
     wire w_in_range = (i_addr[31:ADDR_BITS+2] == 0);
     wire w_access   = i_memread | i_memwrite;
     assign o_addr_error = w_access & ~w_in_range;
 
     // ---------------- ESCRITURA ----------------
 
-    // Dato replicado: cada lane toma el byte que le corresponde segun el tamano
     reg [31:0] r_wd;
-    // Que bytes de la palabra se escriben
     reg [3:0]  r_we;
 
     always @(*) begin
@@ -96,13 +104,10 @@ module data_mem #(
 
     // ---------------- LECTURA ----------------
 
-    // Palabra completa de la posicion pedida (lectura asincronica)
     wire [31:0] w_rword = {mem_b3[w_idx], mem_b2[w_idx], mem_b1[w_idx], mem_b0[w_idx]};
 
-    // Lectura de debug: palabra completa del indice pedido (puerto independiente)
     assign o_debug_data = {mem_b3[i_debug_addr], mem_b2[i_debug_addr], mem_b1[i_debug_addr], mem_b0[i_debug_addr]};
 
-    // Byte y halfword que corresponden a la direccion
     reg [7:0]  r_byte;
     reg [15:0] r_half;
 
