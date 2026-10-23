@@ -5,7 +5,7 @@
 ## Clock del sistema: 100 MHz (el Clocking Wizard lo baja a 50 MHz)
 set_property PACKAGE_PIN W5 [get_ports clock]
 set_property IOSTANDARD LVCMOS33 [get_ports clock]
-create_clock -period 10.000 -name sys_clk_pin -waveform {0 5} -add [get_ports clock]
+create_clock -period 10.000 -name sys_clk_pin -waveform {0 5} [get_ports clock]
 
 ## ------------------------------------------------------------------
 ## Reset: usamos el SW15 (Activo en Bajo - Debe estar ARRIBA para operar)
