@@ -2,7 +2,6 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanc
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2023.1 (win64) Build 3865809 Sun May  7 15:05:29 MDT 2023
 | Date         : Wed Oct 21 16:32:27 2026
-| Host         : fsposetti running 64-bit major release  (build 9200)
 | Command      : report_methodology -file C:/Users/GastonCapdevila/Documents/UNC/ARQdC/computer-architecture/RISC-V/docs/methodology.txt
 | Design       : top_monocycle_debug
 | Device       : xc7a35tcpg236-1
