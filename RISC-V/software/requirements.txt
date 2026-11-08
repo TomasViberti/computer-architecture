@@ -1,0 +1,4 @@
+pyserial>=3.5     # comunicacion con la placa
+rich>=13          # salida de la CLI
+textual>=0.50     # TUI
+# La GUI usa tkinter, que viene con Python (en Linux: sudo apt install python3-tk)
